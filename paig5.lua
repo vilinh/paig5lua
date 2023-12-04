@@ -132,7 +132,10 @@ ifC = {
     type = TYPE.IFC,
     iff = {
         type = TYPE.APPC,
-        fun = "+",
+        fun = {
+            type = TYPE.IDC,
+            value = "-"
+        },
         args = {{
             type = TYPE.NUMC,
             value = 2
@@ -141,14 +144,14 @@ ifC = {
             value = 3
         }}
     },
-    thenf = {{
+    thenf = {
         type = TYPE.NUMC,
         value = 1
-    }},
-    elsef = {{
+    },
+    elsef = {
         type = TYPE.NUMC,
         value = 0
-    }}
+    }
 }
 
 -- Table LamC
@@ -219,6 +222,15 @@ function interp(expr, env)
         if fd.type == VALUETYPE.PRIMOPV then
             return applyPrimop(fd, expr.args, env)
         end
+    elseif expr.type == TYPE.IFC then
+        cond = interp(expr.iff, env)
+        if cond.type ~= VALUETYPE.BOOLV then
+            error("if expected boolean condition, got " .. cond.type)
+        end
+        if cond.value then
+            return interp(expr.thenf, env)
+        end
+        return interp(expr.elsef, env)
     end
 end
 
@@ -269,8 +281,6 @@ function applyPrimop(primop, args, env)
         }
     end
 end
-
-
 
 -- Tests
 TestMyStuff = {}
@@ -387,4 +397,35 @@ function TestMyStuff:testNumC()
     luaunit.assertEquals(result, 4)
 end
 
+function TestMyStuff:testIf()
+    result = interp({
+        type = TYPE.IFC,
+        iff = {
+            type = TYPE.APPC,
+            fun = {
+                type = TYPE.IDC,
+                value = "<="
+            },
+            args = {{
+                type = TYPE.NUMC,
+                value = 2
+            }, {
+                type = TYPE.NUMC,
+                value = 3
+            }}
+        },
+        thenf = {
+            type = TYPE.NUMC,
+            value = 1
+        },
+        elsef = {
+            type = TYPE.NUMC,
+            value = 0
+        }
+    }, topenv).value
+    luaunit.assertEquals(type(result), 'number')
+    luaunit.assertEquals(result, 1)
+end
+
 luaunit.LuaUnit.run()
+

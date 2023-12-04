@@ -41,6 +41,10 @@ topenv = {
         type = VALUETYPE.PRIMOPV,
         value = "<="
     },
+    ["equal?"] = {
+        type = VALUETYPE.PRIMOPV,
+        value = "equal?"
+    },
     ["true"] = {
         type = VALUETYPE.BOOLV,
         value = true
@@ -258,11 +262,17 @@ function applyPrimop(primop, args, env)
             type = VALUETYPE.BOOLV,
             value = firstArg.value <= secondArg.value
         }
+    elseif primop.value == "equal?" then
+        return {
+            type = VALUETYPE.BOOLV,
+            value = firstArg.value == secondArg.value
+        }
     end
 end
 
--- Tests
 
+
+-- Tests
 TestMyStuff = {}
 function TestMyStuff:testLessthanEqual()
     result = interp({
@@ -283,6 +293,44 @@ function TestMyStuff:testLessthanEqual()
     luaunit.assertEquals(result, false)
 end
 
+function TestMyStuff:testEqualFalse()
+    result = interp({
+        type = TYPE.APPC,
+        fun = {
+            type = TYPE.IDC,
+            value = "equal?"
+        },
+        args = {{
+            type = TYPE.NUMC,
+            value = 5
+        }, {
+            type = TYPE.NUMC,
+            value = 3
+        }}
+    }, topenv).value
+    luaunit.assertEquals(type(result), 'boolean')
+    luaunit.assertEquals(result, false)
+end
+
+function TestMyStuff:testEqualTrue()
+    result = interp({
+        type = TYPE.APPC,
+        fun = {
+            type = TYPE.IDC,
+            value = "equal?"
+        },
+        args = {{
+            type = TYPE.NUMC,
+            value = 4
+        }, {
+            type = TYPE.NUMC,
+            value = 4
+        }}
+    }, topenv).value
+    luaunit.assertEquals(type(result), 'boolean')
+    luaunit.assertEquals(result, true)
+end
+
 function TestMyStuff:testAddNums()
     result = interp({
         type = TYPE.APPC,
@@ -300,6 +348,25 @@ function TestMyStuff:testAddNums()
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 5)
+end
+
+function TestMyStuff:testSubtractNums()
+    result = interp({
+        type = TYPE.APPC,
+        fun = {
+            type = TYPE.IDC,
+            value = "-"
+        },
+        args = {{
+            type = TYPE.NUMC,
+            value = 20
+        }, {
+            type = TYPE.NUMC,
+            value = 121
+        }}
+    }, topenv).value
+    luaunit.assertEquals(type(result), 'number')
+    luaunit.assertEquals(result, -101)
 end
 
 function TestMyStuff:testId()

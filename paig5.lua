@@ -219,8 +219,24 @@ function interp(expr, env)
         }
     elseif expr.type == TYPE.APPC then
         fd = interp(expr.fun, env)
+        if not fd then
+            error("PAIG: fun is nil")
+        end
         if fd.type == VALUETYPE.PRIMOPV then
             return applyPrimop(fd, expr.args, env)
+        elseif fd.type == VALUETYPE.CLOSV then
+            if #expr.args == #fd.args then
+                -- construct and append environmen
+                addedEnv = {}
+                spread_table(addedEnv, fd.env)
+                for i = 1, #expr.args do
+                    addedEnv[fd.args[i]] = interp(expr.args[i], env)
+                end
+                return interp(fd.body, addedEnv)
+            else
+                error("PAIG: expected " .. #fd.args " arguments got " .. #expr.args)
+            end
+
         end
     elseif expr.type == TYPE.IFC then
         cond = interp(expr.iff, env)
@@ -233,6 +249,19 @@ function interp(expr, env)
         return interp(expr.elsef, env)
     end
 end
+
+function spread_table(dst, src)
+    for k, v in pairs(src) do
+        dst[k] = v
+    end
+    return dst
+end
+
+-- a = {}
+-- spread_table(a, topenv)
+-- for k, v in pairs(a) do
+--     print(k)
+-- end
 
 function applyPrimop(primop, args, env)
     if #args ~= 2 then
@@ -425,6 +454,71 @@ function TestMyStuff:testIf()
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 1)
+end
+
+function TestMyStuff:testLamC()
+    result = interp({
+        type = TYPE.LAMC,
+        args = {"x", "y"},
+        body = {
+            type = TYPE.APPC,
+            fun = "+",
+            args = {{
+                type = TYPE.IDC,
+                value = "x"
+            }, {
+                type = TYPE.IDC,
+                value = "y"
+            }}
+        }
+    }, topenv)
+    luaunit.assertEquals(result, {
+        type = VALUETYPE.CLOSV,
+        args = {"x", "y"},
+        body = {
+            type = TYPE.APPC,
+            fun = "+",
+            args = {{
+                type = TYPE.IDC,
+                value = "x"
+            }, {
+                type = TYPE.IDC,
+                value = "y"
+            }}
+        },
+        env = topenv
+    })
+    luaunit.assertEquals(result.type, VALUETYPE.CLOSV)
+end
+
+function TestMyStuff:testAppLamC()
+    result = interp({
+        type = TYPE.APPC,
+        fun = {
+            type = TYPE.LAMC,
+            args = {"x", "y"},
+            body = {
+                type = TYPE.APPC,
+                fun = "+",
+                args = {{
+                    type = TYPE.IDC,
+                    value = "x"
+                }, {
+                    type = TYPE.IDC,
+                    value = "y"
+                }}
+            }
+        },
+        args = {{
+            type = TYPE.NUMC,
+            value = 4
+        }, {
+            type = TYPE.NUMC,
+            value = 5
+        }}
+    }, topenv)
+    luaunit.assertEquals(type(result), 'number')
+    luaunit.assertEquals(result, 9)
 end
 
 luaunit.LuaUnit.run()

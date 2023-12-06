@@ -406,4 +406,13 @@ function TestMyStuff:testNestedAppLamC()
     luaunit.assertEquals(result, 16)
 end
 
+function TestMyStuff:testNestedSameVarAppLamC()
+    result = interp(AppC:new(
+        LamC:new({ "h" }, AppC:new(IdC:new("h"), { NumC:new(12), NumC:new(-3) })),
+        { LamC:new({ "h", "x" }, AppC:new(IdC:new("+"), { IdC:new("h"), IdC:new("x") })) }
+    ), topenv).value
+    luaunit.assertEquals(type(result), 'number')
+    luaunit.assertEquals(result, 9)
+end
+
 luaunit.LuaUnit.run()

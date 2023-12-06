@@ -67,7 +67,7 @@ topenv = {
 --       | {blam {id ...} Expr}
 --       | {Expr Expr}
 
--- Value = NumV | BoolV | StringV | ClosV | PrimopV 
+-- Value = NumV | BoolV | StringV | ClosV | PrimopV
 
 -- Table NumV
 -- @NamedField type TYPE
@@ -117,10 +117,10 @@ appC = {
         type = TYPE.IDC,
         value = "+"
     },
-    args = {{
+    args = { {
         type = TYPE.NUMC,
         value = 2
-    }}
+    } }
 }
 
 -- Table IfC
@@ -136,13 +136,13 @@ ifC = {
             type = TYPE.IDC,
             value = "-"
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 2
         }, {
             type = TYPE.NUMC,
             value = 3
-        }}
+        } }
     },
     thenf = {
         type = TYPE.NUMC,
@@ -161,27 +161,22 @@ ifC = {
 
 lamC = {
     type = TYPE.LAMC,
-    args = {"x", "y"},
+    args = { "x", "y" },
     body = {
         type = TYPE.APPC,
         fun = "+",
-        args = {{
+        args = { {
             type = TYPE.IDC,
             value = "x"
         }, {
             type = TYPE.IDC,
             value = "y"
-        }}
+        } }
     }
 }
 
-print(lamC.type)
-print(lamC.args)
-print(lamC.body.type)
-print(lamC.body.args[1].value)
-
--- @param var String 
--- @param env Env 
+-- @param var String
+-- @param env Env
 -- @return Value
 function lookup(var, env)
     for k, v in pairs(env) do
@@ -192,12 +187,14 @@ function lookup(var, env)
     error("PAIG: lookup - var " .. var .. " not in env")
 end
 
--- print(lookup("+", topenv).value)
-
--- @param expr ExprC 
+-- @param expr ExprC
 -- @param env Env
 -- @return Value
 function interp(expr, env)
+    if not expr then
+        error("expected valid expr, got " .. expr)
+    end
+
     if expr.type == TYPE.NUMC then
         return {
             type = VALUETYPE.NUMV,
@@ -220,14 +217,14 @@ function interp(expr, env)
     elseif expr.type == TYPE.APPC then
         fd = interp(expr.fun, env)
         if not fd then
-            error("PAIG: fun is nil")
+            error("PAIG: function is invalid got " .. fd)
         end
         if fd.type == VALUETYPE.PRIMOPV then
             return applyPrimop(fd, expr.args, env)
         elseif fd.type == VALUETYPE.CLOSV then
             if #expr.args == #fd.args then
-                -- construct and append environmen
-                addedEnv = {}
+                -- construct and append environment
+                local addedEnv = {}
                 spread_table(addedEnv, fd.env)
                 for i = 1, #expr.args do
                     addedEnv[fd.args[i]] = interp(expr.args[i], env)
@@ -236,10 +233,9 @@ function interp(expr, env)
             else
                 error("PAIG: expected " .. #fd.args " arguments got " .. #expr.args)
             end
-
         end
     elseif expr.type == TYPE.IFC then
-        cond = interp(expr.iff, env)
+        local cond = interp(expr.iff, env)
         if cond.type ~= VALUETYPE.BOOLV then
             error("if expected boolean condition, got " .. cond.type)
         end
@@ -256,12 +252,6 @@ function spread_table(dst, src)
     end
     return dst
 end
-
--- a = {}
--- spread_table(a, topenv)
--- for k, v in pairs(a) do
---     print(k)
--- end
 
 function applyPrimop(primop, args, env)
     if #args ~= 2 then
@@ -496,30 +486,32 @@ function TestMyStuff:testAppLamC()
         type = TYPE.APPC,
         fun = {
             type = TYPE.LAMC,
-            args = {"x", "y"},
+            args = { "x", "y" },
             body = {
                 type = TYPE.APPC,
-                fun = "+",
-                args = {{
+                fun = {
+                    type = TYPE.IDC,
+                    value = "+"
+                },
+                args = { {
                     type = TYPE.IDC,
                     value = "x"
                 }, {
                     type = TYPE.IDC,
                     value = "y"
-                }}
+                } }
             }
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 4
         }, {
             type = TYPE.NUMC,
             value = 5
-        }}
-    }, topenv)
+        } }
+    }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 9)
 end
 
 luaunit.LuaUnit.run()
-

@@ -148,6 +148,7 @@ function StringC:new(value)
     stringC.value = value
     return stringC
 end
+
 stringC = {
     type = TYPE.STRINGC,
     value = "HELLO WORLD"
@@ -157,6 +158,17 @@ stringC = {
 -- @NamedField type TYPE
 -- @NamedField fun ExprC
 -- @NamedField args [ExprC]
+AppC = {}
+AppC.__index = AppC
+function AppC:new(fun, args)
+    local appC = {}
+    setmetatable(appC, AppC)
+    appC.type = TYPE.APPC
+    appC.fun = fun
+    appC.args = args
+    return appC
+end
+
 appC = {
     type = TYPE.APPC,
     fun = {
@@ -360,68 +372,41 @@ function TestMyStuff:testLessthanEqual()
 end
 
 function TestMyStuff:testEqualFalse()
-    result = interp({
-        type = TYPE.APPC,
-        fun = IdC:new("equal?"),
-        args = { NumC:new(5), NumC:new(3) }
-    }, topenv).value
+    result = interp(AppC:new(IdC:new("equal?"),
+        { NumC:new(5), NumC:new(3) }), topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, false)
 end
 
 function TestMyStuff:testEqualTrue()
-    result = interp({
-        type = TYPE.APPC,
-        fun = IdC:new("equal?"),
-        args = { NumC:new(4), NumC:new(4) }
-    }, topenv).value
+    result = interp(AppC:new(IdC:new("equal?"),
+        { NumC:new(4), NumC:new(4) }), topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, true)
 end
 
 function TestMyStuff:testAddNums()
-    result = interp({
-        type = TYPE.APPC,
-        fun = IdC:new("+"),
-        args = { NumC:new(2), NumC:new(3) }
-    }, topenv).value
+    result = interp(AppC:new(IdC:new("+"), { NumC:new(2), NumC:new(3) }), topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 5)
 end
 
 function TestMyStuff:testSubtractNums()
-    result = interp({
-        type = TYPE.APPC,
-        fun = {
-            type = TYPE.IDC,
-            value = "-"
-        },
-        args = { {
-            type = TYPE.NUMC,
-            value = 20
-        }, {
-            type = TYPE.NUMC,
-            value = 121
-        } }
-    }, topenv).value
+    result = interp(AppC:new(IdC:new("-"),
+        { NumC:new(20), NumC:new(121) })
+    , topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, -101)
 end
 
 function TestMyStuff:testId()
-    result = interp({
-        type = TYPE.IDC,
-        value = "true"
-    }, topenv).value
+    result = interp(IdC:new("true"), topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, true)
 end
 
 function TestMyStuff:testNumC()
-    result = interp({
-        type = TYPE.NUMC,
-        value = 4
-    }, topenv).value
+    result = interp(NumC:new(4), topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 4)
 end
@@ -429,28 +414,9 @@ end
 function TestMyStuff:testIf()
     result = interp({
         type = TYPE.IFC,
-        iff = {
-            type = TYPE.APPC,
-            fun = {
-                type = TYPE.IDC,
-                value = "<="
-            },
-            args = { {
-                type = TYPE.NUMC,
-                value = 2
-            }, {
-                type = TYPE.NUMC,
-                value = 3
-            } }
-        },
-        thenf = {
-            type = TYPE.NUMC,
-            value = 1
-        },
-        elsef = {
-            type = TYPE.NUMC,
-            value = 0
-        }
+        iff = AppC:new(IdC:new("<="), { NumC:new(2), NumC:new(3) }),
+        thenf = NumC:new(1),
+        elsef = NumC:new(0)
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 1)
@@ -460,32 +426,12 @@ function TestMyStuff:testLamC()
     result = interp({
         type = TYPE.LAMC,
         args = { "x", "y" },
-        body = {
-            type = TYPE.APPC,
-            fun = "+",
-            args = { {
-                type = TYPE.IDC,
-                value = "x"
-            }, {
-                type = TYPE.IDC,
-                value = "y"
-            } }
-        }
+        body = AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") })
     }, topenv)
     luaunit.assertEquals(result, {
         type = VALUETYPE.CLOSV,
         args = { "x", "y" },
-        body = {
-            type = TYPE.APPC,
-            fun = "+",
-            args = { {
-                type = TYPE.IDC,
-                value = "x"
-            }, {
-                type = TYPE.IDC,
-                value = "y"
-            } }
-        },
+        body = AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") }),
         env = topenv
     })
     luaunit.assertEquals(result.type, VALUETYPE.CLOSV)
@@ -497,28 +443,9 @@ function TestMyStuff:testAppLamC()
         fun = {
             type = TYPE.LAMC,
             args = { "x", "y" },
-            body = {
-                type = TYPE.APPC,
-                fun = {
-                    type = TYPE.IDC,
-                    value = "+"
-                },
-                args = { {
-                    type = TYPE.IDC,
-                    value = "x"
-                }, {
-                    type = TYPE.IDC,
-                    value = "y"
-                } }
-            }
+            body = AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") })
         },
-        args = { {
-            type = TYPE.NUMC,
-            value = 4
-        }, {
-            type = TYPE.NUMC,
-            value = 5
-        } }
+        args = { NumC:new(4), NumC:new(5) }
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 9)
@@ -532,14 +459,8 @@ function TestMyStuff:testNestedAppLamC()
             args = { "h" },
             body = {
                 type = TYPE.APPC,
-                fun = {
-                    type = TYPE.IDC,
-                    value = "h"
-                },
-                args = { {
-                    type = TYPE.NUMC,
-                    value = 12
-                }, }
+                fun = IdC:new("h"),
+                args = { NumC:new(12) }
             }
         },
         args = { {
@@ -547,17 +468,8 @@ function TestMyStuff:testNestedAppLamC()
             args = { "x" },
             body = {
                 type = TYPE.APPC,
-                fun = {
-                    type = TYPE.IDC,
-                    value = "+"
-                },
-                args = { {
-                    type = TYPE.IDC,
-                    value = "x"
-                }, {
-                    type = TYPE.NUMC,
-                    value = 4
-                } }
+                fun = IdC:new("+"),
+                args = { IdC:new("x"), NumC:new(4) }
             }
         } }
     }, topenv).value

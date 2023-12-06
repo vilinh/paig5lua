@@ -310,13 +310,13 @@ function TestMyStuff:testLessthanEqual()
             type = TYPE.IDC,
             value = "<="
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 5
         }, {
             type = TYPE.NUMC,
             value = 3
-        }}
+        } }
     }, topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, false)
@@ -329,13 +329,13 @@ function TestMyStuff:testEqualFalse()
             type = TYPE.IDC,
             value = "equal?"
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 5
         }, {
             type = TYPE.NUMC,
             value = 3
-        }}
+        } }
     }, topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, false)
@@ -348,13 +348,13 @@ function TestMyStuff:testEqualTrue()
             type = TYPE.IDC,
             value = "equal?"
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 4
         }, {
             type = TYPE.NUMC,
             value = 4
-        }}
+        } }
     }, topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, true)
@@ -367,13 +367,13 @@ function TestMyStuff:testAddNums()
             type = TYPE.IDC,
             value = "+"
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 2
         }, {
             type = TYPE.NUMC,
             value = 3
-        }}
+        } }
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 5)
@@ -386,13 +386,13 @@ function TestMyStuff:testSubtractNums()
             type = TYPE.IDC,
             value = "-"
         },
-        args = {{
+        args = { {
             type = TYPE.NUMC,
             value = 20
         }, {
             type = TYPE.NUMC,
             value = 121
-        }}
+        } }
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, -101)
@@ -425,13 +425,13 @@ function TestMyStuff:testIf()
                 type = TYPE.IDC,
                 value = "<="
             },
-            args = {{
+            args = { {
                 type = TYPE.NUMC,
                 value = 2
             }, {
                 type = TYPE.NUMC,
                 value = 3
-            }}
+            } }
         },
         thenf = {
             type = TYPE.NUMC,
@@ -449,32 +449,32 @@ end
 function TestMyStuff:testLamC()
     result = interp({
         type = TYPE.LAMC,
-        args = {"x", "y"},
+        args = { "x", "y" },
         body = {
             type = TYPE.APPC,
             fun = "+",
-            args = {{
+            args = { {
                 type = TYPE.IDC,
                 value = "x"
             }, {
                 type = TYPE.IDC,
                 value = "y"
-            }}
+            } }
         }
     }, topenv)
     luaunit.assertEquals(result, {
         type = VALUETYPE.CLOSV,
-        args = {"x", "y"},
+        args = { "x", "y" },
         body = {
             type = TYPE.APPC,
             fun = "+",
-            args = {{
+            args = { {
                 type = TYPE.IDC,
                 value = "x"
             }, {
                 type = TYPE.IDC,
                 value = "y"
-            }}
+            } }
         },
         env = topenv
     })
@@ -512,6 +512,47 @@ function TestMyStuff:testAppLamC()
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 9)
+end
+
+function TestMyStuff:testNestedAppLamC()
+    result = interp({
+        type = TYPE.APPC,
+        fun = {
+            type = TYPE.LAMC,
+            args = { "h" },
+            body = {
+                type = TYPE.APPC,
+                fun = {
+                    type = TYPE.IDC,
+                    value = "h"
+                },
+                args = { {
+                    type = TYPE.NUMC,
+                    value = 12
+                }, }
+            }
+        },
+        args = { {
+            type = TYPE.LAMC,
+            args = { "x" },
+            body = {
+                type = TYPE.APPC,
+                fun = {
+                    type = TYPE.IDC,
+                    value = "+"
+                },
+                args = { {
+                    type = TYPE.IDC,
+                    value = "x"
+                }, {
+                    type = TYPE.NUMC,
+                    value = 4
+                } }
+            }
+        } }
+    }, topenv).value
+    luaunit.assertEquals(type(result), 'number')
+    luaunit.assertEquals(result, 16)
 end
 
 luaunit.LuaUnit.run()

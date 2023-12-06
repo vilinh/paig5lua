@@ -103,6 +103,16 @@ topenv = {
 -- Table NumC
 -- @NamedField type TYPE
 -- @NamedField value Number
+NumC = {}
+NumC.__index = NumC
+function NumC:new(value)
+    local numC = {}
+    setmetatable(numC, NumC)
+    numC.type = TYPE.NUMC
+    numC.value = value
+    return numC
+end
+
 numC = {
     type = TYPE.NUMC,
     value = 1
@@ -111,6 +121,16 @@ numC = {
 -- Table IdC
 -- @NamedField type TYPE
 -- @NamedField value String
+IdC = {}
+IdC.__index = IdC
+function IdC:new(value)
+    local idC = {}
+    setmetatable(idC, IdC)
+    idC.type = TYPE.IDC
+    idC.value = value
+    return idC
+end
+
 idC = {
     type = TYPE.IDC,
     value = "x"
@@ -119,6 +139,15 @@ idC = {
 -- Table StringC
 -- @NamedField type TYPE
 -- @NamedField value String
+StringC = {}
+StringC.__index = StringC
+function StringC:new(value)
+    local stringC = {}
+    setmetatable(stringC, StringC)
+    stringC.type = TYPE.STRINGC
+    stringC.value = value
+    return stringC
+end
 stringC = {
     type = TYPE.STRINGC,
     value = "HELLO WORLD"
@@ -323,17 +352,8 @@ TestMyStuff = {}
 function TestMyStuff:testLessthanEqual()
     result = interp({
         type = TYPE.APPC,
-        fun = {
-            type = TYPE.IDC,
-            value = "<="
-        },
-        args = { {
-            type = TYPE.NUMC,
-            value = 5
-        }, {
-            type = TYPE.NUMC,
-            value = 3
-        } }
+        fun = IdC:new("<="),
+        args = { NumC:new(5), NumC:new(3) }
     }, topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, false)
@@ -342,17 +362,8 @@ end
 function TestMyStuff:testEqualFalse()
     result = interp({
         type = TYPE.APPC,
-        fun = {
-            type = TYPE.IDC,
-            value = "equal?"
-        },
-        args = { {
-            type = TYPE.NUMC,
-            value = 5
-        }, {
-            type = TYPE.NUMC,
-            value = 3
-        } }
+        fun = IdC:new("equal?"),
+        args = { NumC:new(5), NumC:new(3) }
     }, topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, false)
@@ -361,17 +372,8 @@ end
 function TestMyStuff:testEqualTrue()
     result = interp({
         type = TYPE.APPC,
-        fun = {
-            type = TYPE.IDC,
-            value = "equal?"
-        },
-        args = { {
-            type = TYPE.NUMC,
-            value = 4
-        }, {
-            type = TYPE.NUMC,
-            value = 4
-        } }
+        fun = IdC:new("equal?"),
+        args = { NumC:new(4), NumC:new(4) }
     }, topenv).value
     luaunit.assertEquals(type(result), 'boolean')
     luaunit.assertEquals(result, true)
@@ -380,17 +382,8 @@ end
 function TestMyStuff:testAddNums()
     result = interp({
         type = TYPE.APPC,
-        fun = {
-            type = TYPE.IDC,
-            value = "+"
-        },
-        args = { {
-            type = TYPE.NUMC,
-            value = 2
-        }, {
-            type = TYPE.NUMC,
-            value = 3
-        } }
+        fun = IdC:new("+"),
+        args = { NumC:new(2), NumC:new(3) }
     }, topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 5)

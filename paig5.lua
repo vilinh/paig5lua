@@ -97,8 +97,8 @@ topenv = {
 
 -- Core Syntax --
 -- The following comments define the data definitions represented as Tables
--- Following the comments are an example of how the table would be constructed
--- to represent the piece of core syntax
+-- Functions following provide a method to create the table representing the core syntax
+
 
 -- Table NumC
 -- @NamedField type TYPE
@@ -113,11 +113,6 @@ function NumC:new(value)
     return numC
 end
 
-numC = {
-    type = TYPE.NUMC,
-    value = 1
-}
-
 -- Table IdC
 -- @NamedField type TYPE
 -- @NamedField value String
@@ -131,11 +126,6 @@ function IdC:new(value)
     return idC
 end
 
-idC = {
-    type = TYPE.IDC,
-    value = "x"
-}
-
 -- Table StringC
 -- @NamedField type TYPE
 -- @NamedField value String
@@ -148,11 +138,6 @@ function StringC:new(value)
     stringC.value = value
     return stringC
 end
-
-stringC = {
-    type = TYPE.STRINGC,
-    value = "HELLO WORLD"
-}
 
 -- Table AppC
 -- @NamedField type TYPE
@@ -169,68 +154,37 @@ function AppC:new(fun, args)
     return appC
 end
 
-appC = {
-    type = TYPE.APPC,
-    fun = {
-        type = TYPE.IDC,
-        value = "+"
-    },
-    args = { {
-        type = TYPE.NUMC,
-        value = 2
-    } }
-}
-
 -- Table IfC
 -- @NamedField type TYPE
 -- @NamedField iff ExprC
 -- @NamedField thenf ExprC
 -- @NamedField elsef ExprC
-ifC = {
-    type = TYPE.IFC,
-    iff = {
-        type = TYPE.APPC,
-        fun = {
-            type = TYPE.IDC,
-            value = "-"
-        },
-        args = { {
-            type = TYPE.NUMC,
-            value = 2
-        }, {
-            type = TYPE.NUMC,
-            value = 3
-        } }
-    },
-    thenf = {
-        type = TYPE.NUMC,
-        value = 1
-    },
-    elsef = {
-        type = TYPE.NUMC,
-        value = 0
-    }
-}
+IfC = {}
+IfC.__index = IfC
+function IfC:new(iff, thenf, elsef)
+    local ifC = {}
+    setmetatable(ifC, IfC)
+    ifC.type = TYPE.IFC
+    ifC.iff = iff
+    ifC.thenf = thenf
+    ifC.elsef = elsef
+    return ifC
+end
 
 -- Table LamC
 -- @NamedField type TYPE
 -- @NamedField args [String]
 -- @NamedField body ExprC
-lamC = {
-    type = TYPE.LAMC,
-    args = { "x", "y" },
-    body = {
-        type = TYPE.APPC,
-        fun = "+",
-        args = { {
-            type = TYPE.IDC,
-            value = "x"
-        }, {
-            type = TYPE.IDC,
-            value = "y"
-        } }
-    }
-}
+LamC = {}
+LamC.__index = LamC
+function LamC:new(args, body)
+    local lamC = {}
+    setmetatable(lamC, LamC)
+    lamC.type = TYPE.LAMC
+    lamC.args = args
+    lamC.body = body
+    return lamC
+end
 
 -- @param var String
 -- @param env Env
@@ -412,22 +366,20 @@ function TestMyStuff:testNumC()
 end
 
 function TestMyStuff:testIf()
-    result = interp({
-        type = TYPE.IFC,
-        iff = AppC:new(IdC:new("<="), { NumC:new(2), NumC:new(3) }),
-        thenf = NumC:new(1),
-        elsef = NumC:new(0)
-    }, topenv).value
+    result = interp(IfC:new(
+        AppC:new(IdC:new("<="), { NumC:new(2), NumC:new(3) }),
+        NumC:new(1),
+        NumC:new(0)
+    ), topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 1)
 end
 
 function TestMyStuff:testLamC()
-    result = interp({
-        type = TYPE.LAMC,
-        args = { "x", "y" },
-        body = AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") })
-    }, topenv)
+    result = interp(
+        LamC:new({ "x", "y" },
+            AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") }))
+        , topenv)
     luaunit.assertEquals(result, {
         type = VALUETYPE.CLOSV,
         args = { "x", "y" },
@@ -438,41 +390,21 @@ function TestMyStuff:testLamC()
 end
 
 function TestMyStuff:testAppLamC()
-    result = interp({
-        type = TYPE.APPC,
-        fun = {
-            type = TYPE.LAMC,
-            args = { "x", "y" },
-            body = AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") })
-        },
-        args = { NumC:new(4), NumC:new(5) }
-    }, topenv).value
+    result = interp(AppC:new(
+        LamC:new(
+            { "x", "y" },
+            AppC:new(IdC:new("+"),
+                { IdC:new("x"), IdC:new("y") }))
+        , { NumC:new(4), NumC:new(5) }), topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 9)
 end
 
 function TestMyStuff:testNestedAppLamC()
-    result = interp({
-        type = TYPE.APPC,
-        fun = {
-            type = TYPE.LAMC,
-            args = { "h" },
-            body = {
-                type = TYPE.APPC,
-                fun = IdC:new("h"),
-                args = { NumC:new(12) }
-            }
-        },
-        args = { {
-            type = TYPE.LAMC,
-            args = { "x" },
-            body = {
-                type = TYPE.APPC,
-                fun = IdC:new("+"),
-                args = { IdC:new("x"), NumC:new(4) }
-            }
-        } }
-    }, topenv).value
+    result = interp(AppC:new(
+        LamC:new({ "h" }, AppC:new(IdC:new("h"), { NumC:new(12) })),
+        { LamC:new({ "x" }, AppC:new(IdC:new("+"), { IdC:new("x"), NumC:new(4) }))}
+    ), topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 16)
 end

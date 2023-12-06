@@ -103,7 +103,6 @@ topenv = {
 -- Table NumC
 -- @NamedField type TYPE
 -- @NamedField value Number
-
 numC = {
     type = TYPE.NUMC,
     value = 1
@@ -112,7 +111,6 @@ numC = {
 -- Table IdC
 -- @NamedField type TYPE
 -- @NamedField value String
-
 idC = {
     type = TYPE.IDC,
     value = "x"
@@ -121,7 +119,6 @@ idC = {
 -- Table StringC
 -- @NamedField type TYPE
 -- @NamedField value String
-
 stringC = {
     type = TYPE.STRINGC,
     value = "HELLO WORLD"
@@ -131,7 +128,6 @@ stringC = {
 -- @NamedField type TYPE
 -- @NamedField fun ExprC
 -- @NamedField args [ExprC]
-
 appC = {
     type = TYPE.APPC,
     fun = {
@@ -179,7 +175,6 @@ ifC = {
 -- @NamedField type TYPE
 -- @NamedField args [String]
 -- @NamedField body ExprC
-
 lamC = {
     type = TYPE.LAMC,
     args = { "x", "y" },

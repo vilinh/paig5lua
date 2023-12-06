@@ -239,12 +239,13 @@ function interp(expr, env)
             return applyPrimop(fd, expr.args, env)
         elseif fd.type == VALUETYPE.CLOSV then
             if #expr.args == #fd.args then
-                -- construct and append environment
+                -- add arguments to environment
                 local addedEnv = {}
                 spread_table(addedEnv, fd.env)
                 for i = 1, #expr.args do
                     addedEnv[fd.args[i]] = interp(expr.args[i], env)
                 end
+                -- evaluate in new environment
                 return interp(fd.body, addedEnv)
             else
                 error("PAIG: expected " .. #fd.args " arguments got " .. #expr.args)

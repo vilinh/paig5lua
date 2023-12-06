@@ -224,10 +224,8 @@ end
 -- @return Value
 function interp(expr, env)
     if not expr then
-        error("expected valid expr, got " .. expr)
-    end
-
-    if expr.type == TYPE.NUMC then
+        error("expected valid expr, got " .. expr)    
+    elseif expr.type == TYPE.NUMC then
         return NumV:new(expr.value)
     elseif expr.type == TYPE.STRINGC then
         return StringV:new(expr.value)
@@ -239,8 +237,7 @@ function interp(expr, env)
         fd = interp(expr.fun, env)
         if not fd then
             error("PAIG: function is invalid got " .. fd)
-        end
-        if fd.type == VALUETYPE.PRIMOPV then
+        elseif fd.type == VALUETYPE.PRIMOPV then
             return applyPrimop(fd, expr.args, env)
         elseif fd.type == VALUETYPE.CLOSV then
             if #expr.args == #fd.args then
@@ -268,6 +265,8 @@ function interp(expr, env)
     end
 end
 
+-- @param dst Table
+-- @param src Table
 function spread_table(dst, src)
     for k, v in pairs(src) do
         dst[k] = v
@@ -275,6 +274,9 @@ function spread_table(dst, src)
     return dst
 end
 
+-- @param primop PRIMOPV
+-- @param args [ExprC]
+-- @param env Env
 function applyPrimop(primop, args, env)
     if #args ~= 2 then
         error("PAIG: function expected 2 args, got " .. #args)

@@ -19,7 +19,7 @@ local VALUETYPE = {
     PRIMOPV = "PrimopV"
 }
 
--- Env table<String, Value>
+-- Env = table<String, Value>
 topenv = {
     ["+"] = {
         type = VALUETYPE.PRIMOPV,
@@ -67,17 +67,38 @@ topenv = {
 --       | {blam {id ...} Expr}
 --       | {Expr Expr}
 
+
+
 -- Value = NumV | BoolV | StringV | ClosV | PrimopV
 
 -- Table NumV
--- @NamedField type TYPE
+-- @NamedField type VALUETYPE
 -- @NamedField value Number
 
+-- Table BoolV
+-- @NamedField type VALUETYPE
+-- @NamedField value Boolean
+
+-- Table StringV
+-- @NamedField type VALUETYPE
+-- @NamedField value String
+
 -- Table ClosV
--- @NamedField type TYPE
+-- @NamedField type VALUETYPE
 -- @NamedField args [String]
 -- @NamedField body ExprC
 -- @NamedField env Env
+
+-- Table PrimopV
+-- @NamedField type VALUETYPE
+-- @NamedField value String
+
+
+
+-- Core Syntax --
+-- The following comments define the data definitions represented as Tables
+-- Following the comments are an example of how the table would be constructed
+-- to represent the piece of core syntax
 
 -- Table NumC
 -- @NamedField type TYPE

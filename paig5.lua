@@ -19,42 +19,6 @@ local VALUETYPE = {
     PRIMOPV = "PrimopV"
 }
 
--- Env = table<String, Value>
-topenv = {
-    ["+"] = {
-        type = VALUETYPE.PRIMOPV,
-        value = "+"
-    },
-    ["-"] = {
-        type = VALUETYPE.PRIMOPV,
-        value = "-"
-    },
-    ["/"] = {
-        type = VALUETYPE.PRIMOPV,
-        value = "/"
-    },
-    ["*"] = {
-        type = VALUETYPE.PRIMOPV,
-        value = "*"
-    },
-    ["<="] = {
-        type = VALUETYPE.PRIMOPV,
-        value = "<="
-    },
-    ["equal?"] = {
-        type = VALUETYPE.PRIMOPV,
-        value = "equal?"
-    },
-    ["true"] = {
-        type = VALUETYPE.BOOLV,
-        value = true
-    },
-    ["false"] = {
-        type = VALUETYPE.BOOLV,
-        value = false
-    }
-}
-
 -- Concrete Syntax
 -- ExprC = NumC | IdC | StringC | AppC | IfC | LamC
 
@@ -74,26 +38,83 @@ topenv = {
 -- Table NumV
 -- @NamedField type VALUETYPE
 -- @NamedField value Number
+NumV = {}
+NumV.__index = NumV
+function NumV:new(value)
+    local numV = {}
+    setmetatable(numV, NumV)
+    numV.type = VALUETYPE.NUMV
+    numV.value = value
+    return numV
+end
 
 -- Table BoolV
 -- @NamedField type VALUETYPE
 -- @NamedField value Boolean
+BoolV = {}
+BoolV.__index = BoolV
+function BoolV:new(value)
+    local boolV = {}
+    setmetatable(boolV, BoolV)
+    boolV.type = VALUETYPE.BOOLV
+    boolV.value = value
+    return boolV
+end
 
 -- Table StringV
 -- @NamedField type VALUETYPE
 -- @NamedField value String
+StringV = {}
+StringV.__index = StringV
+function StringV:new(value)
+    local stringV = {}
+    setmetatable(stringV, StringV)
+    stringV.type = VALUETYPE.STRINGV
+    stringV.value = value
+    return stringV
+end
 
 -- Table ClosV
 -- @NamedField type VALUETYPE
 -- @NamedField args [String]
 -- @NamedField body ExprC
 -- @NamedField env Env
+ClosV = {}
+ClosV.__index = ClosV
+function ClosV:new(args, body, env)
+    local closV = {}
+    setmetatable(closV, ClosV)
+    closV.type = VALUETYPE.CLOSV
+    closV.args = args
+    closV.body = body
+    closV.env = env
+    return closV
+end
 
 -- Table PrimopV
 -- @NamedField type VALUETYPE
 -- @NamedField value String
+PrimopV = {}
+PrimopV.__index = PrimopV
+function PrimopV:new(value)
+    local primopV = {}
+    setmetatable(primopV, PrimopV)
+    primopV.type = VALUETYPE.PRIMOPV
+    primopV.value = value
+    return primopV
+end
 
-
+-- Env = table<String, Value>
+topenv = {
+    ["+"] = PrimopV:new("+"),
+    ["-"] = PrimopV:new("-"),
+    ["/"] = PrimopV:new("/"),
+    ["*"] = PrimopV:new("*"),
+    ["<="] = PrimopV:new("<="),
+    ["equal?"] = PrimopV:new("equal?"),
+    ["true"] = BoolV:new(true),
+    ["false"] = BoolV:new(false)
+}
 
 -- Core Syntax --
 -- The following comments define the data definitions represented as Tables
@@ -207,24 +228,13 @@ function interp(expr, env)
     end
 
     if expr.type == TYPE.NUMC then
-        return {
-            type = VALUETYPE.NUMV,
-            value = expr.value
-        }
+        return NumV:new(expr.value)
     elseif expr.type == TYPE.STRINGC then
-        return {
-            type = VALUETYPE.STRINGV,
-            value = expr.value
-        }
+        return StringV:new(expr.value)
     elseif expr.type == TYPE.IDC then
         return lookup(expr.value, env)
     elseif expr.type == TYPE.LAMC then
-        return {
-            type = VALUETYPE.CLOSV,
-            args = expr.args,
-            body = expr.body,
-            env = env
-        }
+        return ClosV:new(expr.args, expr.body, env)
     elseif expr.type == TYPE.APPC then
         fd = interp(expr.fun, env)
         if not fd then
@@ -278,38 +288,20 @@ function applyPrimop(primop, args, env)
     end
 
     if primop.value == "+" then
-        return {
-            type = VALUETYPE.NUMV,
-            value = firstArg.value + secondArg.value
-        }
+        return NumV:new(firstArg.value + secondArg.value)
     elseif primop.value == "-" then
-        return {
-            type = VALUETYPE.NUMV,
-            value = firstArg.value - secondArg.value
-        }
+        return NumV:new(firstArg.value - secondArg.value)
     elseif primop.value == "*" then
-        return {
-            type = VALUETYPE.NUMV,
-            value = firstArg.value * secondArg.value
-        }
+        return NumV:new(firstArg.value * secondArg.value)
     elseif primop.value == "/" then
         if secondArg.value == 0 then
             error("PAIG: division by zero")
         end
-        return {
-            type = VALUETYPE.NUMV,
-            value = firstArg.value / secondArg.value
-        }
+        return NumV:new(firstArg.value / secondArg.value)
     elseif primop.value == "<=" then
-        return {
-            type = VALUETYPE.BOOLV,
-            value = firstArg.value <= secondArg.value
-        }
+        return BoolV:new(firstArg.value <= secondArg.value)
     elseif primop.value == "equal?" then
-        return {
-            type = VALUETYPE.BOOLV,
-            value = firstArg.value == secondArg.value
-        }
+        return BoolV:new(firstArg.value == secondArg.value)
     end
 end
 
@@ -340,7 +332,10 @@ function TestMyStuff:testEqualTrue()
 end
 
 function TestMyStuff:testAddNums()
-    result = interp(AppC:new(IdC:new("+"), { NumC:new(2), NumC:new(3) }), topenv).value
+    result = interp(
+        AppC:new(IdC:new("+"),
+            { NumC:new(2), NumC:new(3) }),
+        topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 5)
 end
@@ -380,22 +375,22 @@ function TestMyStuff:testLamC()
         LamC:new({ "x", "y" },
             AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") }))
         , topenv)
-    luaunit.assertEquals(result, {
-        type = VALUETYPE.CLOSV,
-        args = { "x", "y" },
-        body = AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") }),
-        env = topenv
-    })
+    luaunit.assertEquals(result, ClosV:new({ "x", "y" }, 
+        AppC:new(IdC:new("+"), { IdC:new("x"), IdC:new("y") }),
+        topenv))
     luaunit.assertEquals(result.type, VALUETYPE.CLOSV)
 end
 
 function TestMyStuff:testAppLamC()
-    result = interp(AppC:new(
-        LamC:new(
-            { "x", "y" },
-            AppC:new(IdC:new("+"),
-                { IdC:new("x"), IdC:new("y") }))
-        , { NumC:new(4), NumC:new(5) }), topenv).value
+    result = interp(
+        AppC:new(
+            LamC:new(
+                { "x", "y" },
+                AppC:new(
+                    IdC:new("+"),
+                    { IdC:new("x"), IdC:new("y") }))
+            , { NumC:new(4), NumC:new(5) })
+        , topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 9)
 end
@@ -403,7 +398,7 @@ end
 function TestMyStuff:testNestedAppLamC()
     result = interp(AppC:new(
         LamC:new({ "h" }, AppC:new(IdC:new("h"), { NumC:new(12) })),
-        { LamC:new({ "x" }, AppC:new(IdC:new("+"), { IdC:new("x"), NumC:new(4) }))}
+        { LamC:new({ "x" }, AppC:new(IdC:new("+"), { IdC:new("x"), NumC:new(4) })) }
     ), topenv).value
     luaunit.assertEquals(type(result), 'number')
     luaunit.assertEquals(result, 16)
